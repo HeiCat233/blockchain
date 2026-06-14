@@ -13,14 +13,22 @@
 - **完整生命周期**：支持身份从创建到吊销的全流程管理
 
 ### 1.3 项目结构
+
 ```
 blockchain/
+├── .claude/              # Claude AI IDE 配置文件夹（Trae IDE自动生成）
+│   └── settings.local.json # 本地权限配置
 ├── BlockchainNode/          # 长安链节点配置
 │   └── config/
 │       └── node1/
 │           ├── certs/
-│           ├── chainmaker.yml
-│           └── bc1.yml
+│           │   └── node/
+│           │       └── cmtestnode1/
+│           │           └── cmtestnode1.nodeid # 节点身份标识
+│           ├── chainconfig/
+│           │   └── bc1.yml  # 区块链配置
+│           ├── chainmaker.yml # 节点主配置
+│           └── log.yml      # 日志配置
 ├── SmartContract/       # 智能合约
 │   ├── did-contract.go      # DID身份管理合约
 │   └── go.mod
@@ -28,12 +36,70 @@ blockchain/
 │   ├── app.js               # Express服务入口
 │   ├── chainmaker-client.js # 长安链客户端封装
 │   ├── test-demo.js         # 测试脚本
-│   └── package.json
+│   ├── package.json
+│   └── package-lock.json
 ├── Scripts/              # 部署脚本
-│   ├── docker-compose.yml
-│   └── docker-compose-chainmaker.yml
-└── README.md
+│   ├── .env.example        # 环境变量示例
+│   ├── docker-compose.yml  # Docker编排配置
+│   ├── docker-compose-chainmaker.yml # 长安链Docker配置
+│   ├── install-docker.bat  # Windows Docker安装脚本
+│   ├── install-docker.ps1  # PowerShell Docker安装脚本
+│   └── start-chainmaker.ps1 # 启动长安链脚本
+├── docs/                # 项目文档
+│   ├── CHAINMAKER-DEPLOY.md  # 长安链部署指南
+│   ├── CONNECT_TO_CHAINMAKER.md # 连接长安链指南
+│   ├── README-Docker.md    # Docker相关说明
+│   ├── WSL-DEPLOY-GUIDE.md # WSL部署指南
+│   └── 大作业实施规划.md   # 原始项目规划
+├── .gitignore           # Git忽略配置
+├── README.md            # 项目说明
+└── project_guide.md     # 本文档（项目完整指南）
 ```
+
+### 1.4 文件夹详细说明
+
+| 文件夹/文件 | 说明 | 是否可删除 | 删除建议 |
+|-----------|------|-----------|---------|
+| `.claude/` | Claude AI IDE 自动生成的配置文件夹，用于存储 IDE 本地设置 | **是** | **✅ 建议删除** - 仅在开发环境有用，不属于项目代码 |
+| `BlockchainNode/` | 长安链节点的完整配置，包含证书、链配置等 | **否** | **❌ 不要删除** - 项目核心配置，启动区块链节点必需 |
+| `SmartContract/` | 智能合约代码 | **否** | **❌ 不要删除** - 项目核心业务逻辑 |
+| `backend/` | 后端服务代码 | **否** | **❌ 不要删除** - 项目核心服务层 |
+| `Scripts/` | 部署和启动脚本 | **否** | **❌ 不要删除** - 快速部署必需 |
+| `docs/` | 项目文档集合 | **建议保留** | **ℹ️ 可选** - 如不需要原始文档可删除，但保留有助于理解项目历史 |
+| `.gitignore` | Git 版本控制配置 | **否** | **❌ 不要删除** - 版本控制必需 |
+| `README.md` | 项目基础说明 | **否** | **❌ 不要删除** - 项目基础介绍 |
+| `project_guide.md` | 本文档（完整项目指南） | **否** | **❌ 不要删除** - 本文档是您创建的完整指南 |
+
+### 1.5 核心代码文件注释说明
+
+为了帮助开发者更好地理解和学习项目，以下核心代码文件都添加了详细的中文注释：
+
+| 文件路径 | 说明 | 注释特点 |
+|---------|------|---------|
+| `SmartContract/did-contract.go` | 长安链智能合约，实现DID身份管理 | ✅ 详细的步骤注释，每个逻辑步骤都有说明 |
+| `backend/app.js` | Express后端服务入口，提供RESTful API | ✅ 完整的API文档注释，包含请求/响应示例 |
+| `backend/chainmaker-client.js` | 长安链客户端封装，简化链上交互 | ✅ JSDoc风格注释，参数和返回值说明完整 |
+
+所有注释都包含：
+- 文件头部说明文档
+- 各模块功能分区注释
+- 核心业务逻辑的步骤说明
+- 关键代码的解释
+
+### 1.6 重要提示：项目现状
+
+**✅ 项目功能已完整实现，没有空文件夹需要创建**
+
+当前项目结构已经是一个功能完整的简化版本，不同于原始规划文档中的复杂设计：
+
+| 原始规划 | 实际实现 | 说明 |
+|---------|---------|------|
+| 多模块拆分的复杂结构 | 单文件简化实现 | 所有功能整合到 `did-contract.go`，更简洁 |
+| identity/ 独立文件夹 | 无独立文件夹 | 身份管理功能已在合约中实现 |
+| 多层级服务架构 | 简洁的 Express 服务 | 后端已简化，功能完整 |
+| 多个细分文件 | 单一核心文件 | 易于理解和维护 |
+
+**不需要创建任何额外的文件夹或文件！** 项目当前状态已经可以正常运行。
 
 ## 2. 背景与价值
 

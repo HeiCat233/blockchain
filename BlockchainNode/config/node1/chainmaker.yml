@@ -1,0 +1,183 @@
+auth_type: permissionedWithCert
+log:
+  config_file: ../config/log.yml
+crypto_engine: tjfoc
+blockchain:
+- chainId: chain1
+  genesis: ../config/chainconfig/bc1.yml
+node:
+  org_id: TestCMorg1
+  priv_key_file: ../config/certs/node/cmtestnode1/cmtestnode1.sign.key
+  cert_file: ../config/certs/node/cmtestnode1/cmtestnode1.sign.crt
+  cert_cache_size: 1000
+  cert_key_usage_check: true
+  pkcs11:
+    enabled: false
+    type: pkcs11
+    library: /usr/local/lib64/pkcs11/libupkcs11.so
+    label: HSM
+    password: "11111111"
+    session_cache_size: 10
+    hash: SHA256
+  fast_sync:
+    enabled: true
+    min_full_blocks: 0
+net:
+  provider: LibP2P
+  listen_addr: /ip4/0.0.0.0/tcp/11301
+  seeds:
+  - /ip4/127.0.0.1/tcp/11301/p2p/QmQMsfF9iBzSC6EFpHPE7YQMY9BbG3Utt3DdneBViKpSPF
+  tls:
+    enabled: true
+    priv_key_file: ../config/certs/node/cmtestnode1/cmtestnode1.tls.key
+    cert_file: ../config/certs/node/cmtestnode1/cmtestnode1.tls.crt
+txpool:
+  pool_type: normal
+  max_txpool_size: 1000
+  max_config_txpool_size: 10
+  is_dump_txs_in_queue: true
+  common_queue_num: 8
+  batch_max_size: 100
+  batch_create_timeout: 50
+rpc:
+  provider: grpc
+  port: 12301
+  check_chain_conf_trust_roots_change_interval: 60
+  ratelimit:
+    enabled: false
+    type: 0
+    token_per_second: -1
+    token_bucket_size: -1
+  subscriber:
+    ratelimit:
+      enabled: false
+      type: 0
+      token_per_second: 100
+      token_bucket_size: 100
+  tls:
+    mode: oneway
+    priv_key_file: ../config/certs/node/cmtestnode1/cmtestnode1.tls.key
+    cert_file: ../config/certs/node/cmtestnode1/cmtestnode1.tls.crt
+  max_send_msg_size: 100
+  max_recv_msg_size: 100
+  gateway:
+    enabled: true
+    max_resp_body_size: 16
+tx_filter:
+  type: 0
+  birds_nest:
+    length: 10
+    rules:
+      absolute_expire_time: 172800
+    cuckoo:
+      key_type: 1
+      tags_per_bucket: 2
+      bits_per_item: 11
+      max_num_keys: 2000000
+      table_type: 0
+    snapshot:
+      type: 0
+      timed:
+        interval: 10
+      block_height:
+        interval: 10
+      serialize_interval: 10
+      path: ../data/{org_id}/tx_filter
+  sharding:
+    length: 5
+    timeout: 60
+    snapshot:
+      type: 0
+      timed:
+        interval: 10
+      block_height:
+        interval: 10
+      serialize_interval: 10
+      path: ../data/{org_id}/tx_filter
+    birds_nest:
+      length: 10
+      rules:
+        absolute_expire_time: 172800
+      cuckoo:
+        key_type: 1
+        tags_per_bucket: 2
+        bits_per_item: 11
+        max_num_keys: 2000000
+        table_type: 0
+monitor:
+  enabled: false
+  port: 0
+pprof:
+  enabled: false
+  port: 0
+consensus:
+  raft:
+    snap_count: 10
+    async_wal_save: true
+    ticker: 1
+storage:
+  store_path: ../data/ledgerData1
+  unarchive_block_height: 300000
+  disable_block_file_db: false
+  logdb_segment_async: false
+  logdb_segment_size: 128
+  enable_bigfilter: false
+  bigfilter_config:
+    redis_hosts_port: 127.0.0.1:6300,127.0.0.1:6301
+    redis_password: abcpass
+    tx_capacity: 1000000000
+    fp_rate: 1e-09
+  rolling_window_cache_capacity: 55000
+  write_block_type: 0
+  state_cache_config:
+    life_window: 3000000000000
+    clean_window: 1000000000
+    max_entry_size: 500
+    hard_max_cache_size: 1024
+  blockdb_config:
+    provider: leveldb
+    leveldb_config:
+      store_path: ../data/block
+  statedb_config:
+    provider: leveldb
+    leveldb_config:
+      store_path: ../data/state
+  historydb_config:
+    provider: leveldb
+    disable_key_history: false
+    disable_contract_history: true
+    disable_account_history: true
+    leveldb_config:
+      store_path: ../data/history
+  resultdb_config:
+    provider: leveldb
+    leveldb_config:
+      store_path: ../data/result
+  disable_contract_eventdb: true
+  contract_eventdb_config:
+    provider: sql
+    sqldb_config:
+      sqldb_type: mysql
+      dsn: root:password@tcp(127.0.0.1:3306)/
+scheduler:
+  rwset_log: false
+vm:
+  go:
+    enable: true
+    data_mount_path: ../data/go
+    log_mount_path: ../log/go
+    protocol: tcp
+    log_in_console: false
+    log_level: INFO
+    max_send_msg_size: 100
+    max_recv_msg_size: 100
+    dial_timeout: 10
+    max_concurrency: 20
+    runtime_server:
+      port: 32351
+    contract_engine:
+      host: chainmaker-vm
+      port: 22351
+      max_connection: 5
+  common: null
+  java: null

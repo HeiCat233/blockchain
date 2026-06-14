@@ -1,0 +1,22 @@
+﻿# 排除整个 Archive 目录
+Archive/
+
+# 排除所有日志文件
+*.log
+*.LOG
+log/
+logs/
+
+# 排除运行时数据
+data/
+
+# 排除证书文件
+*.crt
+*.key
+
+# 排除系统文件
+.DS_Store
+Thumbs.db
+
+# 排除依赖
+node_modules/

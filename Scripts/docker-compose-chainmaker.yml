@@ -1,0 +1,123 @@
+# ============================================================
+# 长安链 Docker Compose 配置
+# 适用于：基于长安链的分布式数字身份系统
+# 使用说明：docker-compose -f docker-compose-chainmaker.yml up -d
+# ============================================================
+
+version: "3.8"
+
+services:
+  # -----------------------------
+  # 长安链节点 1
+  # -----------------------------
+  chainmaker-node1:
+    image: chainmakerofficial/chainmaker:v2.3.3
+    container_name: chainmaker-node1
+    hostname: node1.chainmaker.org
+    working_dir: /chainmaker-go/bin
+    command: ./chainmaker start -c ../config/chainmaker.yml
+    ports:
+      - "11301:11301"  # P2P端口
+      - "12301:12301"  # RPC端口
+    volumes:
+      - ../BlockchainNode/config/node1:/chainmaker-go/config
+      - ../BlockchainNode/data/node1:/chainmaker-go/data
+      - ../BlockchainNode/log/node1:/chainmaker-go/log
+      - ../BlockchainNode/keys:/chainmaker-go/keys
+    environment:
+      - CHAIN_ID=chain1
+      - NODE_ID=node1
+      - LOG_LEVEL=INFO
+    networks:
+      - chainmaker-network
+    restart: unless-stopped
+
+  # -----------------------------
+  # 长安链节点 2（可选，用于多节点共识）
+  # -----------------------------
+  # chainmaker-node2:
+  #   image: chainmakerofficial/chainmaker:v2.3.3
+  #   container_name: chainmaker-node2
+  #   hostname: node2.chainmaker.org
+  #   ports:
+  #     - "11302:11301"
+  #     - "12302:12301"
+  #   volumes:
+  #     - ./chainmaker/config/node2:/chainmaker/config
+  #     - ./chainmaker/data/node2:/chainmaker/data
+  #     - ./chainmaker/log/node2:/chainmaker/log
+  #     - ./chainmaker/keys:/chainmaker/keys
+  #   environment:
+  #     - CHAIN_ID=chain1
+  #     - NODE_ID=node2
+  #     - LOG_LEVEL=INFO
+  #   networks:
+  #     - chainmaker-network
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - chainmaker-node1
+
+  # -----------------------------
+  # 合约执行引擎（WASM虚拟机）
+  # -----------------------------
+  chainmaker-vm:
+    image: chainmakerofficial/chainmaker-vm-engine:v2.3.3
+    container_name: chainmaker-vm
+    volumes:
+      - ../BlockchainNode/contracts:/contracts
+    environment:
+      - RPC_ADDR=chainmaker-node1
+      - RPC_PORT=32351
+    networks:
+      - chainmaker-network
+    restart: unless-stopped
+    depends_on:
+      - chainmaker-node1
+
+  # -----------------------------
+  # Redis 缓存服务
+  # 用于会话管理和数据缓存
+  # -----------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: chainmaker-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - chainmaker-network
+    command: redis-server --appendonly yes --requirepass "chainmaker123"
+    restart: unless-stopped
+
+  # -----------------------------
+  # 长安链浏览器（可选）
+  # 注意：浏览器镜像暂不可用，已注释
+  # -----------------------------
+  # chainmaker-browser:
+  #   image: chainmakerofficial/chainmaker-browser:v2.3.3
+  #   container_name: chainmaker-browser
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - CHAINMAKER_RPC_HOST=chainmaker-node1:12301
+  #   networks:
+  #     - chainmaker-network
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - chainmaker-node1
+
+# -----------------------------
+# 持久化数据卷
+# -----------------------------
+volumes:
+  redis-data:
+    driver: local
+
+# -----------------------------
+# 网络配置
+# -----------------------------
+networks:
+  chainmaker-network:
+    driver: bridge
+    name: chainmaker-network

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell.exe *)",
+      "Bash(choco --version)",
+      "Bash(cmd.exe /c \"winget --version\")",
+      "Bash(cmd.exe /c \"where winget\")",
+      "Bash(ping -n 1 desktop.docker.com)"
+    ]
+  }
+}

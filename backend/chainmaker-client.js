@@ -1,22 +1,22 @@
 /*
- * Filename: chainmaker-client.js
- * Function: ChainMaker Client Wrapper (Dual Mode Support)
- * Author: Project Dev Team
- * Date: 2024-06-14
- * Description: Supports two modes:
- *              1. DEMO_MODE (default): File storage, no ChainMaker required
- *              2. CHAIN_MODE: Real ChainMaker, requires node running
+ * 文件名：chainmaker-client.js
+ * 功能：长安链客户端封装类（支持双模式）
+ * 作者：项目开发团队
+ * 日期：2024-06-14
+ * 描述：支持两种模式：
+ *       1. DEMO_MODE（默认）：文件存储，不需要长安链节点
+ *       2. CHAIN_MODE：真实长安链，需要节点运行
  */
 
 // ======================================================================
-// Module Imports
+// 模块导入
 // ======================================================================
 
 const fs = require('fs');
 const path = require('path');
 
 // ======================================================================
-// Configuration
+// 配置常量
 // ======================================================================
 
 const RUN_MODE = process.env.RUN_MODE || 'DEMO_MODE';
@@ -29,11 +29,12 @@ const CHAIN_CONFIG = {
 };
 
 // ======================================================================
-// Language Support
+// 语言支持
 // ======================================================================
 
-// Auto-detect system language or use English for compatibility
-const useEnglish = true; // Set to false for Chinese (may have encoding issues on Windows)
+// 为了Windows终端兼容性，控制台输出使用英文，但代码注释使用中文
+// 如果需要中文输出，将 useEnglish 设置为 false（可能有编码问题）
+const useEnglish = true;
 
 const i18n = {
     en: {
@@ -101,13 +102,17 @@ const i18n = {
 const t = useEnglish ? i18n.en : i18n.zh;
 
 // ======================================================================
-// Client Class Definition
+// 客户端类定义
 // ======================================================================
 
 class SimpleChainmakerClient {
+    /**
+     * 构造函数，初始化客户端配置
+     */
     constructor() {
         console.log(`${t.system_run_mode} ${RUN_MODE}`);
         
+        // 初始化存储引擎
         if (RUN_MODE === 'CHAIN_MODE') {
             this.initChainMode();
         } else {
@@ -116,29 +121,46 @@ class SimpleChainmakerClient {
     }
 
     // ======================================================================
-    // Demo Mode Initialization
+    // 演示模式初始化
     // ======================================================================
 
+    /**
+     * 初始化演示模式（文件存储）
+     */
     initDemoMode() {
+        // 数据存储文件路径（在项目根目录下）
         this.dataFile = path.join(__dirname, '..', 'data', 'did-storage.json');
+        
+        // 初始化内存存储
         this.storage = new Map();
+        
+        // 从文件加载已有数据
         this.loadFromFile();
+        
+        // 尝试加载证书配置（仅用于提示）
         this.loadCerts();
+        
         console.log(t.system_demo_started);
     }
 
+    /**
+     * 从文件加载数据到内存
+     */
     loadFromFile() {
         try {
+            // 确保数据目录存在
             const dataDir = path.dirname(this.dataFile);
             if (!fs.existsSync(dataDir)) {
                 fs.mkdirSync(dataDir, { recursive: true });
                 console.log(`${t.storage_create_dir} ${dataDir}`);
             }
             
+            // 如果文件存在，读取内容
             if (fs.existsSync(this.dataFile)) {
                 const fileContent = fs.readFileSync(this.dataFile, 'utf8');
                 const dataArray = JSON.parse(fileContent);
                 
+                // 将数组转换为 Map
                 for (const item of dataArray) {
                     this.storage.set(item.key, item.value);
                 }
@@ -149,22 +171,29 @@ class SimpleChainmakerClient {
             }
         } catch (err) {
             console.error(`${t.storage_load_error} ${err.message}`);
+            // 出错时使用空的内存存储
             this.storage = new Map();
         }
     }
 
+    /**
+     * 将内存数据保存到文件
+     */
     saveToFile() {
         try {
+            // 确保数据目录存在
             const dataDir = path.dirname(this.dataFile);
             if (!fs.existsSync(dataDir)) {
                 fs.mkdirSync(dataDir, { recursive: true });
             }
             
+            // 将 Map 转换为数组以便序列化
             const dataArray = [];
             for (const [key, value] of this.storage) {
                 dataArray.push({ key, value });
             }
             
+            // 写入文件
             fs.writeFileSync(this.dataFile, JSON.stringify(dataArray, null, 2), 'utf8');
             console.log(`${t.storage_saved} (${this.storage.size} ${t.storage_saved_2})`);
         } catch (err) {
@@ -173,9 +202,12 @@ class SimpleChainmakerClient {
     }
 
     // ======================================================================
-    // ChainMaker Mode Initialization
+    // 长安链模式初始化
     // ======================================================================
 
+    /**
+     * 初始化长安链模式
+     */
     initChainMode() {
         console.log(t.chain_init);
         
@@ -184,12 +216,20 @@ class SimpleChainmakerClient {
         this.rpcAddr = CHAIN_CONFIG.rpcAddr;
         this.contractName = CHAIN_CONFIG.contractName;
         
+        // 这里预留长安链 SDK 初始化
+        // 实际使用时需要安装：npm install @chainmaker/chainmaker-sdk
+        // this.chainClient = new ChainClient(config);
+        
         console.log(t.chain_reserved);
         console.log(t.chain_hint);
         
+        // 降级到演示模式（暂存）
         this.initDemoMode();
     }
 
+    /**
+     * 加载区块链证书配置
+     */
     loadCerts() {
         try {
             const certPath = path.join(__dirname, 'config', 'certs');
@@ -197,55 +237,82 @@ class SimpleChainmakerClient {
                 console.log(`${t.chain_certs_found} ${certPath}`);
             }
         } catch (err) {
-            // Ignore
+            // 简单处理
         }
     }
 
     // ======================================================================
-    // Business Methods - Auto Select Mode
+    // 身份管理业务方法 - 自动选择模式
     // ======================================================================
 
+    /**
+     * 注册新身份
+     */
     async registerIdentity(controller, did, publicKey) {
-        return RUN_MODE === 'CHAIN_MODE' 
-            ? this.registerIdentityChain(controller, did, publicKey)
-            : this.registerIdentityDemo(controller, did, publicKey);
+        if (RUN_MODE === 'CHAIN_MODE') {
+            return this.registerIdentityChain(controller, did, publicKey);
+        } else {
+            return this.registerIdentityDemo(controller, did, publicKey);
+        }
     }
 
+    /**
+     * 查询身份信息
+     */
     async queryIdentity(did) {
-        return RUN_MODE === 'CHAIN_MODE' 
-            ? this.queryIdentityChain(did)
-            : this.queryIdentityDemo(did);
+        if (RUN_MODE === 'CHAIN_MODE') {
+            return this.queryIdentityChain(did);
+        } else {
+            return this.queryIdentityDemo(did);
+        }
     }
 
+    /**
+     * 验证身份有效性
+     */
     async verifyIdentity(did) {
-        return RUN_MODE === 'CHAIN_MODE' 
-            ? this.verifyIdentityChain(did)
-            : this.verifyIdentityDemo(did);
+        if (RUN_MODE === 'CHAIN_MODE') {
+            return this.verifyIdentityChain(did);
+        } else {
+            return this.verifyIdentityDemo(did);
+        }
     }
 
+    /**
+     * 更新身份信息
+     */
     async updateIdentity(controller, did, newPublicKey) {
-        return RUN_MODE === 'CHAIN_MODE' 
-            ? this.updateIdentityChain(controller, did, newPublicKey)
-            : this.updateIdentityDemo(controller, did, newPublicKey);
+        if (RUN_MODE === 'CHAIN_MODE') {
+            return this.updateIdentityChain(controller, did, newPublicKey);
+        } else {
+            return this.updateIdentityDemo(controller, did, newPublicKey);
+        }
     }
 
+    /**
+     * 吊销身份
+     */
     async revokeIdentity(controller, did) {
-        return RUN_MODE === 'CHAIN_MODE' 
-            ? this.revokeIdentityChain(controller, did)
-            : this.revokeIdentityDemo(controller, did);
+        if (RUN_MODE === 'CHAIN_MODE') {
+            return this.revokeIdentityChain(controller, did);
+        } else {
+            return this.revokeIdentityDemo(controller, did);
+        }
     }
 
     // ======================================================================
-    // Demo Mode Implementations
+    // 演示模式方法实现
     // ======================================================================
 
     async registerIdentityDemo(controller, did, publicKey) {
         console.log(`${t.demo_register} ${did}`);
         
+        // 检查 DID 是否已存在
         if (this.storage.has(`did:${did}`)) {
             return { success: false, error: t.error_did_exists };
         }
 
+        // 构建 DID 文档对象
         const doc = {
             id: did,
             controller: controller,
@@ -255,7 +322,9 @@ class SimpleChainmakerClient {
             updated: new Date().toISOString()
         };
         
+        // 存储到内存
         this.storage.set(`did:${did}`, doc);
+        // 保存到文件
         this.saveToFile();
         
         return { success: true, did: did };
@@ -290,10 +359,12 @@ class SimpleChainmakerClient {
             return { success: false, error: t.error_did_not_found };
         }
         
+        // 权限验证
         if (doc.controller !== controller) {
             return { success: false, error: t.error_no_permission };
         }
 
+        // 更新公钥和时间戳
         doc.publicKey = newPublicKey;
         doc.updated = new Date().toISOString();
         
@@ -315,6 +386,7 @@ class SimpleChainmakerClient {
             return { success: false, error: t.error_no_permission };
         }
 
+        // 更新状态为已吊销
         doc.status = 'revoked';
         doc.updated = new Date().toISOString();
         
@@ -325,11 +397,12 @@ class SimpleChainmakerClient {
     }
 
     // ======================================================================
-    // ChainMaker Mode Implementations (Reserved)
+    // 长安链模式方法实现（预留接口）
     // ======================================================================
 
     async registerIdentityChain(controller, did, publicKey) {
         console.log(`${t.chain_register} ${did}`);
+        // 这里将来会调用真实的长安链 SDK
         return this.registerIdentityDemo(controller, did, publicKey);
     }
 
@@ -355,7 +428,7 @@ class SimpleChainmakerClient {
 }
 
 // ======================================================================
-// Module Export
+// 导出模块
 // ======================================================================
 
 module.exports = SimpleChainmakerClient;

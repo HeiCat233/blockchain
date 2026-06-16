@@ -1,13 +1,13 @@
 /*
- * Filename: app.js
- * Function: DID System Backend Service
- * Author: Project Dev Team
- * Date: 2024-06-14
- * Description: RESTful API service for Decentralized Identity Management
+ * 文件名：app.js
+ * 功能：分布式数字身份系统后端服务入口
+ * 作者：项目开发团队
+ * 日期：2024-06-14
+ * 描述：基于 Express 框架构建的 RESTful API 服务，提供身份管理接口
  */
 
 // ======================================================================
-// Module Imports
+// 模块导入
 // ======================================================================
 
 const express = require('express');
@@ -16,35 +16,35 @@ const bodyParser = require('body-parser');
 const SimpleChainmakerClient = require('./chainmaker-client');
 
 // ======================================================================
-// Service Initialization
+// 服务初始化
 // ======================================================================
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ======================================================================
-// Middleware Configuration
+// 中间件配置
 // ======================================================================
 
 app.use(cors());
 app.use(bodyParser.json());
 
 // ======================================================================
-// Blockchain Client Initialization
+// 区块链客户端初始化
 // ======================================================================
 
 const chainClient = new SimpleChainmakerClient();
 
 // ======================================================================
-// API Routes
+// API 接口路由定义
 // ======================================================================
 
 /*
- * Health Check Endpoint
- * Method: GET
- * Path: /health
- * Description: Check if service is running
- * Response: Service status
+ * 健康检查接口
+ * 方法：GET
+ * 路径：/health
+ * 功能：检查服务是否正常运行
+ * 返回：服务状态信息
  */
 app.get('/health', (req, res) => {
     res.json({ 
@@ -54,17 +54,17 @@ app.get('/health', (req, res) => {
 });
 
 /*
- * Register Identity Endpoint
- * Method: POST
- * Path: /api/identity/register
- * Description: Register a new digital identity
- * Request Body:
+ * 身份注册接口
+ * 方法：POST
+ * 路径：/api/identity/register
+ * 功能：在区块链上注册一个新的数字身份
+ * 请求体：
  *   {
- *     "controller": "did:chainmaker:admin123",   // Identity controller
- *     "did": "did:chainmaker:user001",            // DID identifier
- *     "publicKey": "-----BEGIN PUBLIC KEY----..."  // Public key
+ *     "controller": "did:chainmaker:admin123",   // 身份控制器
+ *     "did": "did:chainmaker:user001",            // 身份标识符
+ *     "publicKey": "-----BEGIN PUBLIC KEY----..."  // 公钥
  *   }
- * Response: Registration result
+ * 返回：注册结果
  */
 app.post('/api/identity/register', async (req, res) => {
     try {
@@ -77,13 +77,13 @@ app.post('/api/identity/register', async (req, res) => {
 });
 
 /*
- * Query Identity Endpoint
- * Method: GET
- * Path: /api/identity/:did
- * Description: Get complete identity information by DID
- * Parameters:
- *   - did: DID identifier from URL path
- * Response: Identity document
+ * 身份查询接口
+ * 方法：GET
+ * 路径：/api/identity/:did
+ * 功能：根据 DID 查询完整的身份信息
+ * 参数：
+ *   - did: 路径参数，身份标识符
+ * 返回：身份文档数据
  */
 app.get('/api/identity/:did', async (req, res) => {
     try {
@@ -96,13 +96,13 @@ app.get('/api/identity/:did', async (req, res) => {
 });
 
 /*
- * Verify Identity Endpoint
- * Method: GET
- * Path: /api/identity/:did/verify
- * Description: Verify if identity is valid (exists and active)
- * Parameters:
- *   - did: DID identifier from URL path
- * Response: Verification result with valid flag
+ * 身份验证接口
+ * 方法：GET
+ * 路径：/api/identity/:did/verify
+ * 功能：验证身份是否有效（存在且状态为 active）
+ * 参数：
+ *   - did: 路径参数，身份标识符
+ * 返回：验证结果，valid 字段为 true/false
  */
 app.get('/api/identity/:did/verify', async (req, res) => {
     try {
@@ -115,18 +115,18 @@ app.get('/api/identity/:did/verify', async (req, res) => {
 });
 
 /*
- * Update Identity Endpoint
- * Method: PUT
- * Path: /api/identity/:did
- * Description: Update identity's public key, requires controller permission
- * Parameters:
- *   - did: DID identifier from URL path
- * Request Body:
+ * 身份更新接口
+ * 方法：PUT
+ * 路径：/api/identity/:did
+ * 功能：更新身份的公钥，需要 controller 权限
+ * 参数：
+ *   - did: 路径参数，身份标识符
+ * 请求体：
  *   {
- *     "controller": "did:chainmaker:admin123",  // Permission check
- *     "publicKey": "NEW_PUBLIC_KEY"             // New public key
+ *     "controller": "did:chainmaker:admin123",  // 权限验证
+ *     "publicKey": "NEW_PUBLIC_KEY"             // 新公钥
  *   }
- * Response: Update result
+ * 返回：更新结果
  */
 app.put('/api/identity/:did', async (req, res) => {
     try {
@@ -140,17 +140,17 @@ app.put('/api/identity/:did', async (req, res) => {
 });
 
 /*
- * Revoke Identity Endpoint
- * Method: DELETE
- * Path: /api/identity/:did
- * Description: Mark identity as revoked, makes it invalid
- * Parameters:
- *   - did: DID identifier from URL path
- * Request Body:
+ * 身份吊销接口
+ * 方法：DELETE
+ * 路径：/api/identity/:did
+ * 功能：将身份状态改为 revoked，使其失效
+ * 参数：
+ *   - did: 路径参数，身份标识符
+ * 请求体：
  *   {
- *     "controller": "did:chainmaker:admin123"  // Permission check
+ *     "controller": "did:chainmaker:admin123"  // 权限验证
  *   }
- * Response: Revocation result
+ * 返回：吊销结果
  */
 app.delete('/api/identity/:did', async (req, res) => {
     try {
@@ -164,12 +164,12 @@ app.delete('/api/identity/:did', async (req, res) => {
 });
 
 // ======================================================================
-// Start Server
+// 启动服务
 // ======================================================================
 
 /*
- * Start Express Server
- * Listen on specified port and print info on success
+ * 启动 Express 服务器
+ * 监听指定端口，并在启动成功后打印信息
  */
 app.listen(PORT, () => {
     console.log(`=== Decentralized DID System Started ===`);

@@ -28,13 +28,13 @@ app.use(bodyParser.json());
 // 静态文件服务
 // ======================================================================
 
-// 提供 demo.html 页面
-app.use(express.static(path.join(__dirname, '..')));
-
-// 根路径重定向到演示页面
+// 根路径重定向到校园电子学生证系统（必须放在静态文件服务之前）
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'demo.html'));
+    res.sendFile(path.join(__dirname, '..', 'campus-system.html'));
 });
+
+// 提供其他静态文件
+app.use(express.static(path.join(__dirname, '..')));
 
 // ======================================================================
 // 区块链客户端初始化
@@ -75,8 +75,24 @@ app.get('/health', (req, res) => {
  */
 app.post('/api/identity/register', async (req, res) => {
     try {
-        const { controller, did, publicKey } = req.body;
-        const result = await chainClient.registerIdentity(controller, did, publicKey);
+        const { controller, did, publicKey, studentName } = req.body;
+        const result = await chainClient.registerIdentity(controller, did, publicKey, studentName);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 获取所有身份接口
+ * 方法：GET
+ * 路径：/api/identities
+ * 功能：获取系统中所有已注册的身份列表
+ * 返回：所有身份的数组
+ */
+app.get('/api/identities', async (req, res) => {
+    try {
+        const result = await chainClient.getAllIdentities();
         res.json(result);
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -164,6 +180,244 @@ app.delete('/api/identity/:did', async (req, res) => {
         const did = req.params.did;
         const { controller } = req.body;
         const result = await chainClient.revokeIdentity(controller, did);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ======================================================================
+// 消费管理 API
+// ======================================================================
+
+/*
+ * 添加消费记录
+ * 方法：POST
+ * 路径：/api/consumption
+ * 功能：添加一条消费记录
+ */
+app.post('/api/consumption', async (req, res) => {
+    try {
+        const { did, amount, type, location, description } = req.body;
+        const result = await chainClient.addConsumption(did, amount, type, location, description);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 获取指定学生的消费记录
+ * 方法：GET
+ * 路径：/api/consumption/:did
+ */
+app.get('/api/consumption/:did', async (req, res) => {
+    try {
+        const did = req.params.did;
+        const result = await chainClient.getConsumptionsByDid(did);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 获取所有消费记录
+ * 方法：GET
+ * 路径：/api/consumptions
+ */
+app.get('/api/consumptions', async (req, res) => {
+    try {
+        const result = await chainClient.getAllConsumptions();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ======================================================================
+// 场馆预约管理 API
+// ======================================================================
+
+/*
+ * 获取场馆列表
+ * 方法：GET
+ * 路径：/api/venues
+ */
+app.get('/api/venues', async (req, res) => {
+    try {
+        const result = await chainClient.getVenues();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 添加预约
+ * 方法：POST
+ * 路径：/api/reservation
+ */
+app.post('/api/reservation', async (req, res) => {
+    try {
+        const { did, venueId, venueName, date, timeSlot, attendees } = req.body;
+        const result = await chainClient.addReservation(did, venueId, venueName, date, timeSlot, attendees);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 获取指定学生的预约记录
+ * 方法：GET
+ * 路径：/api/reservation/:did
+ */
+app.get('/api/reservation/:did', async (req, res) => {
+    try {
+        const did = req.params.did;
+        const result = await chainClient.getReservationsByDid(did);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 获取所有预约记录
+ * 方法：GET
+ * 路径：/api/reservations
+ */
+app.get('/api/reservations', async (req, res) => {
+    try {
+        const result = await chainClient.getAllReservations();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 取消预约
+ * 方法：PUT
+ * 路径：/api/reservation/:id/cancel
+ */
+app.put('/api/reservation/:id/cancel', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const result = await chainClient.cancelReservation(id);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ======================================================================
+// 成就管理 API
+// ======================================================================
+
+/*
+ * 添加成就
+ * 方法：POST
+ * 路径：/api/achievement
+ */
+app.post('/api/achievement', async (req, res) => {
+    try {
+        const { did, title, type, description, issuer, issueDate } = req.body;
+        const result = await chainClient.addAchievement(did, title, type, description, issuer, issueDate);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 获取指定学生的成就
+ * 方法：GET
+ * 路径：/api/achievement/:did
+ */
+app.get('/api/achievement/:did', async (req, res) => {
+    try {
+        const did = req.params.did;
+        const result = await chainClient.getAchievementsByDid(did);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 获取所有成就
+ * 方法：GET
+ * 路径：/api/achievements
+ */
+app.get('/api/achievements', async (req, res) => {
+    try {
+        const result = await chainClient.getAllAchievements();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ======================================================================
+// 删除相关 API
+// ======================================================================
+
+/*
+ * 删除消费记录
+ * 方法：DELETE
+ * 路径：/api/consumption/:id
+ */
+app.delete('/api/consumption/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const result = await chainClient.deleteConsumption(id);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 删除预约记录
+ * 方法：DELETE
+ * 路径：/api/reservation/:id
+ */
+app.delete('/api/reservation/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const result = await chainClient.deleteReservation(id);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 删除成就记录
+ * 方法：DELETE
+ * 路径：/api/achievement/:id
+ */
+app.delete('/api/achievement/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const result = await chainClient.deleteAchievement(id);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+ * 删除学生关联数据（消费、预约、成就）
+ * 方法：DELETE
+ * 路径：/api/identity/:did/related
+ */
+app.delete('/api/identity/:did/related', async (req, res) => {
+    try {
+        const did = req.params.did;
+        const result = await chainClient.deleteRelatedData(did);
         res.json(result);
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

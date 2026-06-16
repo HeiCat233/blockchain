@@ -102,6 +102,15 @@ class SimpleChainmakerClient {
         } else {
             this.initDemoMode();
         }
+        
+        // 初始化各业务模块的存储
+        this.consumptionFile = path.join(__dirname, '..', 'data', 'consumption-storage.json');
+        this.reservationFile = path.join(__dirname, '..', 'data', 'reservation-storage.json');
+        this.achievementFile = path.join(__dirname, '..', 'data', 'achievement-storage.json');
+        this.consumptionStorage = new Map();
+        this.reservationStorage = new Map();
+        this.achievementStorage = new Map();
+        this.loadBusinessData();
     }
 
     initDemoMode() {
@@ -154,6 +163,274 @@ class SimpleChainmakerClient {
         } catch (err) {
             console.error(`${t.storage_save_error} ${err.message}`);
         }
+    }
+
+    loadBusinessData() {
+        try {
+            const dataDir = path.dirname(this.consumptionFile);
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, { recursive: true });
+            }
+            
+            // 加载消费数据
+            if (fs.existsSync(this.consumptionFile)) {
+                const content = fs.readFileSync(this.consumptionFile, 'utf8');
+                const dataArray = JSON.parse(content);
+                for (const item of dataArray) {
+                    this.consumptionStorage.set(item.key, item.value);
+                }
+            }
+            
+            // 加载预约数据
+            if (fs.existsSync(this.reservationFile)) {
+                const content = fs.readFileSync(this.reservationFile, 'utf8');
+                const dataArray = JSON.parse(content);
+                for (const item of dataArray) {
+                    this.reservationStorage.set(item.key, item.value);
+                }
+            }
+            
+            // 加载成就数据
+            if (fs.existsSync(this.achievementFile)) {
+                const content = fs.readFileSync(this.achievementFile, 'utf8');
+                const dataArray = JSON.parse(content);
+                for (const item of dataArray) {
+                    this.achievementStorage.set(item.key, item.value);
+                }
+            }
+            
+            console.log(`[Business Storage] Loaded business data successfully`);
+        } catch (err) {
+            console.error(`[Business Storage] Failed to load business data: ${err.message}`);
+        }
+    }
+
+    saveBusinessData() {
+        try {
+            // 保存消费数据
+            const consumptionArray = [];
+            for (const [key, value] of this.consumptionStorage) {
+                consumptionArray.push({ key, value });
+            }
+            fs.writeFileSync(this.consumptionFile, JSON.stringify(consumptionArray, null, 2), 'utf8');
+            
+            // 保存预约数据
+            const reservationArray = [];
+            for (const [key, value] of this.reservationStorage) {
+                reservationArray.push({ key, value });
+            }
+            fs.writeFileSync(this.reservationFile, JSON.stringify(reservationArray, null, 2), 'utf8');
+            
+            // 保存成就数据
+            const achievementArray = [];
+            for (const [key, value] of this.achievementStorage) {
+                achievementArray.push({ key, value });
+            }
+            fs.writeFileSync(this.achievementFile, JSON.stringify(achievementArray, null, 2), 'utf8');
+            
+            console.log(`[Business Storage] Saved business data successfully`);
+        } catch (err) {
+            console.error(`[Business Storage] Failed to save business data: ${err.message}`);
+        }
+    }
+
+    // ==================== 消费管理模块 ====================
+    async addConsumption(did, amount, type, location, description) {
+        const id = `consumption_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+        const record = {
+            id,
+            did,
+            amount,
+            type, // 'food', 'shopping', 'transport', 'other'
+            location,
+            description,
+            timestamp: new Date().toISOString(),
+            status: 'completed'
+        };
+        this.consumptionStorage.set(id, record);
+        this.saveBusinessData();
+        return { success: true, data: record };
+    }
+
+    async getConsumptionsByDid(did) {
+        const records = [];
+        for (const value of this.consumptionStorage.values()) {
+            if (value.did === did) {
+                records.push(value);
+            }
+        }
+        return { success: true, data: records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) };
+    }
+
+    async getAllConsumptions() {
+        const records = [];
+        for (const value of this.consumptionStorage.values()) {
+            records.push(value);
+        }
+        return { success: true, data: records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) };
+    }
+
+    // ==================== 场馆预约管理模块 ====================
+    async addReservation(did, venueId, venueName, date, timeSlot, attendees = 1) {
+        const id = `reservation_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+        const record = {
+            id,
+            did,
+            venueId,
+            venueName,
+            date,
+            timeSlot,
+            attendees,
+            status: 'confirmed', // 'pending', 'confirmed', 'cancelled', 'completed'
+            createdAt: new Date().toISOString()
+        };
+        this.reservationStorage.set(id, record);
+        this.saveBusinessData();
+        return { success: true, data: record };
+    }
+
+    async getReservationsByDid(did) {
+        const records = [];
+        for (const value of this.reservationStorage.values()) {
+            if (value.did === did) {
+                records.push(value);
+            }
+        }
+        return { success: true, data: records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
+    }
+
+    async getAllReservations() {
+        const records = [];
+        for (const value of this.reservationStorage.values()) {
+            records.push(value);
+        }
+        return { success: true, data: records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
+    }
+
+    async cancelReservation(id) {
+        const record = this.reservationStorage.get(id);
+        if (!record) {
+            return { success: false, error: 'Reservation not found' };
+        }
+        record.status = 'cancelled';
+        record.updatedAt = new Date().toISOString();
+        this.reservationStorage.set(id, record);
+        this.saveBusinessData();
+        return { success: true, data: record };
+    }
+
+    async getVenues() {
+        const venues = [
+            { id: 'library', name: '图书馆', description: '图书借阅、自习室', capacity: 200, icon: '📚' },
+            { id: 'gym', name: '体育馆', description: '篮球场、羽毛球场、健身房', capacity: 100, icon: '🏀' },
+            { id: 'lab_cs', name: '计算机实验室', description: '编程、人工智能实验', capacity: 50, icon: '💻' },
+            { id: 'conference', name: '会议室', description: '小组讨论、会议', capacity: 30, icon: '📋' }
+        ];
+        return { success: true, data: venues };
+    }
+
+    // ==================== 成就管理模块 ====================
+    async addAchievement(did, title, type, description, issuer, issueDate) {
+        const id = `achievement_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+        const record = {
+            id,
+            did,
+            title,
+            type, // 'scholarship', 'certificate', 'competition', 'other'
+            description,
+            issuer,
+            issueDate,
+            verified: true,
+            createdAt: new Date().toISOString()
+        };
+        this.achievementStorage.set(id, record);
+        this.saveBusinessData();
+        return { success: true, data: record };
+    }
+
+    async getAchievementsByDid(did) {
+        const records = [];
+        for (const value of this.achievementStorage.values()) {
+            if (value.did === did) {
+                records.push(value);
+            }
+        }
+        return { success: true, data: records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
+    }
+
+    async getAllAchievements() {
+        const records = [];
+        for (const value of this.achievementStorage.values()) {
+            records.push(value);
+        }
+        return { success: true, data: records };
+    }
+
+    async deleteConsumption(id) {
+        if (!this.consumptionStorage.has(id)) {
+            return { success: false, error: '消费记录不存在' };
+        }
+        this.consumptionStorage.delete(id);
+        this.saveBusinessData();
+        return { success: true };
+    }
+
+    async deleteReservation(id) {
+        if (!this.reservationStorage.has(id)) {
+            return { success: false, error: '预约记录不存在' };
+        }
+        this.reservationStorage.delete(id);
+        this.saveBusinessData();
+        return { success: true };
+    }
+
+    async deleteAchievement(id) {
+        if (!this.achievementStorage.has(id)) {
+            return { success: false, error: '成就记录不存在' };
+        }
+        this.achievementStorage.delete(id);
+        this.saveBusinessData();
+        return { success: true };
+    }
+
+    async deleteRelatedData(did) {
+        let deletedCount = 0;
+        const idsToDelete = [];
+        
+        for (const [id, record] of this.consumptionStorage) {
+            if (record.did === did) {
+                idsToDelete.push(id);
+            }
+        }
+        for (const id of idsToDelete) {
+            this.consumptionStorage.delete(id);
+            deletedCount++;
+        }
+        idsToDelete.length = 0;
+        
+        for (const [id, record] of this.reservationStorage) {
+            if (record.did === did) {
+                idsToDelete.push(id);
+            }
+        }
+        for (const id of idsToDelete) {
+            this.reservationStorage.delete(id);
+            deletedCount++;
+        }
+        idsToDelete.length = 0;
+        
+        for (const [id, record] of this.achievementStorage) {
+            if (record.did === did) {
+                idsToDelete.push(id);
+            }
+        }
+        for (const id of idsToDelete) {
+            this.achievementStorage.delete(id);
+            deletedCount++;
+        }
+        
+        this.saveBusinessData();
+        return { success: true, deletedCount };
     }
 
     initChainMode() {
@@ -219,12 +496,21 @@ class SimpleChainmakerClient {
         }
     }
 
-    async registerIdentity(controller, did, publicKey) {
+    async registerIdentity(controller, did, publicKey, studentName = null) {
         if (RUN_MODE === 'CHAIN_MODE') {
-            return this.registerIdentityChain(controller, did, publicKey);
+            return this.registerIdentityChain(controller, did, publicKey, studentName);
         } else {
-            return this.registerIdentityDemo(controller, did, publicKey);
+            return this.registerIdentityDemo(controller, did, publicKey, studentName);
         }
+    }
+
+    async getAllIdentities() {
+        console.log(`[System] Getting all identities, count: ${this.storage.size}`);
+        const identities = [];
+        for (const value of this.storage.values()) {
+            identities.push(value);
+        }
+        return { success: true, data: identities };
     }
 
     async queryIdentity(did) {
@@ -259,7 +545,7 @@ class SimpleChainmakerClient {
         }
     }
 
-    async registerIdentityDemo(controller, did, publicKey) {
+    async registerIdentityDemo(controller, did, publicKey, studentName = null) {
         console.log(`${t.demo_register} ${did}`);
         
         if (this.storage.has(`did:${did}`)) {
@@ -274,6 +560,10 @@ class SimpleChainmakerClient {
             created: new Date().toISOString(),
             updated: new Date().toISOString()
         };
+
+        if (studentName) {
+            doc.studentName = studentName;
+        }
         
         this.storage.set(`did:${did}`, doc);
         this.saveToFile();
@@ -344,7 +634,7 @@ class SimpleChainmakerClient {
         return { success: true };
     }
 
-    async registerIdentityChain(controller, did, publicKey) {
+    async registerIdentityChain(controller, did, publicKey, studentName = null) {
         console.log(`${t.chain_register} ${did}`);
         
         if (this.storage.has(`did:${did}`)) {
@@ -359,6 +649,10 @@ class SimpleChainmakerClient {
             created: new Date().toISOString(),
             updated: new Date().toISOString()
         };
+
+        if (studentName) {
+            doc.studentName = studentName;
+        }
         
         this.storage.set(`did:${did}`, doc);
         this.saveToFile();

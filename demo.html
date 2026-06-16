@@ -80,6 +80,54 @@
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
         }
+
+        .overview-card {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .overview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .overview-table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #fcfcfc;
+        }
+
+        .refresh-btn {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
         
         .card {
             background: white;
@@ -255,6 +303,31 @@
         </header>
 
         <div class="grid">
+            <div class="overview-card">
+                <div class="overview-header">
+                    <h2><span class="icon">📊</span> 全局概览面板</h2>
+                    <button class="refresh-btn" onclick="loadAllIdentities()">刷新列表</button>
+                </div>
+                <div class="overview-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>身份标识 (DID)</th>
+                                <th>控制器</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overview-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">正在加载数据...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="card">
                 <h2><span class="icon">📝</span> 1. 身份注册</h2>
                 <div class="form-group">
@@ -371,6 +444,51 @@
                 }
             }
 
+            async function loadAllIdentities() {
+                const tbody = document.getElementById('overview-body');
+                try {
+                    const response = await fetch(`${API_BASE}/api/identities`);
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        if (result.data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">暂无身份数据</td></tr>';
+                            return;
+                        }
+                        
+                        let html = '';
+                        result.data.forEach(doc => {
+                            const createdDate = new Date(doc.created).toLocaleString();
+                            html += `
+                                <tr>
+                                    <td><code>${doc.id}</code></td>
+                                    <td><code>${doc.controller}</code></td>
+                                    <td><span class="status-tag ${doc.status}">${doc.status}</span></td>
+                                    <td>${createdDate}</td>
+                                    <td>
+                                        <button class="refresh-btn" onclick="fillAndQuery('${doc.id}')">详情</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">加载失败: ' + result.error + '</td></tr>';
+                    }
+                } catch (error) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">请求失败: ' + error.message + '</td></tr>';
+                }
+            }
+
+            function fillAndQuery(did) {
+                document.getElementById('query-did').value = did;
+                document.getElementById('verify-did').value = did;
+                document.getElementById('update-did').value = did;
+                document.getElementById('revoke-did').value = did;
+                queryIdentity();
+                window.scrollTo({ top: document.querySelector('.grid').offsetTop - 20, behavior: 'smooth' });
+            }
+
             async function registerIdentity() {
                 const controller = document.getElementById('reg-controller').value;
                 const did = document.getElementById('reg-did').value;
@@ -389,6 +507,7 @@
                     
                     if (result.success) {
                         showResult('reg-result', true, '✅ 身份注册成功！DID: ' + did, result);
+                        loadAllIdentities(); // 刷新列表
                     } else {
                         showResult('reg-result', false, '❌ 注册失败: ' + result.error);
                     }
@@ -449,6 +568,7 @@
                     
                     if (result.success) {
                         showResult('update-result', true, '✅ 身份更新成功！');
+                        loadAllIdentities(); // 刷新列表
                     } else {
                         showResult('update-result', false, '❌ 更新失败: ' + result.error);
                     }
@@ -474,6 +594,7 @@
                     
                     if (result.success) {
                         showResult('revoke-result', true, '✅ 身份吊销成功！');
+                        loadAllIdentities(); // 刷新列表
                     } else {
                         showResult('revoke-result', false, '❌ 吊销失败: ' + result.error);
                     }
@@ -486,7 +607,9 @@
                 try {
                     const response = await fetch(`${API_BASE}/health`);
                     const result = await response.json();
-                    if (result.status !== 'ok') {
+                    if (result.status === 'ok') {
+                        loadAllIdentities(); // 启动时加载列表
+                    } else {
                         alert('后端服务未正常启动，请检查！');
                     }
                 } catch (error) {

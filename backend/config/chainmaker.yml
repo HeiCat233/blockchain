@@ -1,0 +1,11 @@
+# 长安链 SDK 配置
+chainId: chain1
+rpcAddr: http://localhost:12301
+orgId: TestCMorg1
+
+# 合约配置
+contractName: did-contract
+contractVersion: 1.0
+
+# 连接配置
+timeout: 10000

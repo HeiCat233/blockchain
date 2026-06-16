@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分布式数字身份 (DID) 系统 - 演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-text {
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 .icon {
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        button.warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+        
+        button.danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .did-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .did-card .label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .did-card .value {
+            word-break: break-all;
+            color: #333;
+        }
+        
+        .valid {
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .invalid {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .status-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .status-tag.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-tag.revoked {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 分布式数字身份 (DID) 系统</h1>
+            <p class="subtitle">基于长安链的去中心化身份管理系统</p>
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span class="status-text">后端服务: 运行中</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span class="status-text">当前模式: 演示模式 (DEMO)</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2><span class="icon">📝</span> 1. 身份注册</h2>
+                <div class="form-group">
+                    <label for="reg-controller">控制器 (Controller)</label>
+                    <input type="text" id="reg-controller" value="did:chainmaker:admin123" placeholder="did:chainmaker:admin123">
+                </div>
+                <div class="form-group">
+                    <label for="reg-did">身份标识 (DID)</label>
+                    <input type="text" id="reg-did" value="did:chainmaker:user001" placeholder="did:chainmaker:user001">
+                </div>
+                <div class="form-group">
+                    <label for="reg-pubkey">公钥 (Public Key)</label>
+                    <input type="text" id="reg-pubkey" value="test_public_key_12345" placeholder="public_key_here">
+                </div>
+                <button class="success" onclick="registerIdentity()">注册身份</button>
+                <div id="reg-result" class="result"></div>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">🔍</span> 2. 身份查询</h2>
+                <div class="form-group">
+                    <label for="query-did">身份标识 (DID)</label>
+                    <input type="text" id="query-did" value="did:chainmaker:user001" placeholder="did:chainmaker:user001">
+                </div>
+                <button class="success" onclick="queryIdentity()">查询身份</button>
+                <div id="query-result" class="result"></div>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">✅</span> 3. 身份验证</h2>
+                <div class="form-group">
+                    <label for="verify-did">身份标识 (DID)</label>
+                    <input type="text" id="verify-did" value="did:chainmaker:user001" placeholder="did:chainmaker:user001">
+                </div>
+                <button class="success" onclick="verifyIdentity()">验证身份</button>
+                <div id="verify-result" class="result"></div>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">🔄</span> 4. 身份更新</h2>
+                <div class="form-group">
+                    <label for="update-did">身份标识 (DID)</label>
+                    <input type="text" id="update-did" value="did:chainmaker:user001" placeholder="did:chainmaker:user001">
+                </div>
+                <div class="form-group">
+                    <label for="update-controller">控制器 (Controller)</label>
+                    <input type="text" id="update-controller" value="did:chainmaker:admin123" placeholder="did:chainmaker:admin123">
+                </div>
+                <div class="form-group">
+                    <label for="update-pubkey">新公钥 (New Public Key)</label>
+                    <input type="text" id="update-pubkey" value="updated_public_key_67890" placeholder="new_public_key_here">
+                </div>
+                <button class="warning" onclick="updateIdentity()">更新身份</button>
+                <div id="update-result" class="result"></div>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">❌</span> 5. 身份吊销</h2>
+                <div class="form-group">
+                    <label for="revoke-did">身份标识 (DID)</label>
+                    <input type="text" id="revoke-did" value="did:chainmaker:user001" placeholder="did:chainmaker:user001">
+                </div>
+                <div class="form-group">
+                    <label for="revoke-controller">控制器 (Controller)</label>
+                    <input type="text" id="revoke-controller" value="did:chainmaker:admin123" placeholder="did:chainmaker:admin123">
+                </div>
+                <button class="danger" onclick="revokeIdentity()">吊销身份</button>
+                <div id="revoke-result" class="result"></div>
+            </div>
+        </div>
+
+        <script>
+            const API_BASE = 'http://localhost:3000';
+
+            function showResult(elementId, success, message, data = null) {
+                const element = document.getElementById(elementId);
+                element.className = 'result ' + (success ? 'success' : 'error') + ' show';
+                
+                if (data && success) {
+                    let html = `<p>${message}</p>`;
+                    
+                    if (data) {
+                        if (data.data) {
+                            const doc = data.data;
+                            html += '<div class="did-card">' +
+                                '<div class="label">身份标识 (DID)</div>' +
+                                '<div class="value">' + doc.id + '</div>' +
+                                '<div class="label">控制器 (Controller)</div>' +
+                                '<div class="value">' + doc.controller + '</div>' +
+                                '<div class="label">公钥 (Public Key)</div>' +
+                                '<div class="value">' + doc.publicKey + '</div>' +
+                                '<div class="label">状态 (Status)</div>' +
+                                '<div class="value">' +
+                                '<span class="status-tag ' + doc.status + '">' + doc.status + '</span>' +
+                                '</div>' +
+                                '<div class="label">创建时间</div>' +
+                                '<div class="value">' + doc.created + '</div>' +
+                                '<div class="label">更新时间</div>' +
+                                '<div class="value">' + doc.updated + '</div>' +
+                                '</div>';
+                        } else if (data.valid !== undefined) {
+                            html += '<div class="did-card">' +
+                                '<div class="label">验证结果</div>' +
+                                '<div class="value">' +
+                                (data.valid ? '<span class="valid">✅ 身份有效 (Active)</span>' : '<span class="invalid">❌ 身份无效 (Revoked)</span>') +
+                                '</div>' +
+                                '</div>';
+                        }
+                    }
+                    
+                    element.innerHTML = html;
+                } else {
+                    element.innerHTML = `<p>${message}</p>`;
+                }
+            }
+
+            async function registerIdentity() {
+                const controller = document.getElementById('reg-controller').value;
+                const did = document.getElementById('reg-did').value;
+                const publicKey = document.getElementById('reg-pubkey').value;
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/identity/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ controller, did, publicKey })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showResult('reg-result', true, '✅ 身份注册成功！DID: ' + did, result);
+                    } else {
+                        showResult('reg-result', false, '❌ 注册失败: ' + result.error);
+                    }
+                } catch (error) {
+                    showResult('reg-result', false, '❌ 请求失败: ' + error.message);
+                }
+            }
+
+            async function queryIdentity() {
+                const did = document.getElementById('query-did').value;
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/identity/${encodeURIComponent(did)}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showResult('query-result', true, '✅ 查询成功', result);
+                    } else {
+                        showResult('query-result', false, '❌ 查询失败: ' + result.error);
+                    }
+                } catch (error) {
+                    showResult('query-result', false, '❌ 请求失败: ' + error.message);
+                }
+            }
+
+            async function verifyIdentity() {
+                const did = document.getElementById('verify-did').value;
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/identity/${encodeURIComponent(did)}/verify`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showResult('verify-result', true, '✅ 验证完成', result);
+                    } else {
+                        showResult('verify-result', false, '❌ 验证失败: ' + result.error);
+                    }
+                } catch (error) {
+                    showResult('verify-result', false, '❌ 请求失败: ' + error.message);
+                }
+            }
+
+            async function updateIdentity() {
+                const did = document.getElementById('update-did').value;
+                const controller = document.getElementById('update-controller').value;
+                const publicKey = document.getElementById('update-pubkey').value;
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/identity/${encodeURIComponent(did)}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ controller, publicKey })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showResult('update-result', true, '✅ 身份更新成功！');
+                    } else {
+                        showResult('update-result', false, '❌ 更新失败: ' + result.error);
+                    }
+                } catch (error) {
+                    showResult('update-result', false, '❌ 请求失败: ' + error.message);
+                }
+            }
+
+            async function revokeIdentity() {
+                const did = document.getElementById('revoke-did').value;
+                const controller = document.getElementById('revoke-controller').value;
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/identity/${encodeURIComponent(did)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ controller })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showResult('revoke-result', true, '✅ 身份吊销成功！');
+                    } else {
+                        showResult('revoke-result', false, '❌ 吊销失败: ' + result.error);
+                    }
+                } catch (error) {
+                    showResult('revoke-result', false, '❌ 请求失败: ' + error.message);
+                }
+            }
+
+            window.onload = async function() {
+                try {
+                    const response = await fetch(`${API_BASE}/health`);
+                    const result = await response.json();
+                    if (result.status !== 'ok') {
+                        alert('后端服务未正常启动，请检查！');
+                    }
+                } catch (error) {
+                    alert('无法连接后端服务，请确保服务已启动！');
+                }
+            };
+        </script>
+</body>
+</html>

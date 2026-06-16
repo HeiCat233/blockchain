@@ -1,10 +1,4 @@
-/*
- * 文件名：app.js
- * 功能：分布式数字身份系统后端服务入口
- * 作者：项目开发团队
- * 日期：2024-06-14
- * 描述：基于 Express 框架构建的 RESTful API 服务，提供身份管理接口
- */
+
 
 // ======================================================================
 // 模块导入
@@ -13,6 +7,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 const SimpleChainmakerClient = require('./chainmaker-client');
 
 // ======================================================================
@@ -28,6 +23,18 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// ======================================================================
+// 静态文件服务
+// ======================================================================
+
+// 提供 demo.html 页面
+app.use(express.static(path.join(__dirname, '..')));
+
+// 根路径重定向到演示页面
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'demo.html'));
+});
 
 // ======================================================================
 // 区块链客户端初始化
@@ -174,5 +181,6 @@ app.delete('/api/identity/:did', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`=== Decentralized DID System Started ===`);
     console.log(`Service URL: http://localhost:${PORT}`);
+    console.log(`Demo Page: http://localhost:${PORT}`);
     console.log(`Health Check: http://localhost:${PORT}/health`);
 });
